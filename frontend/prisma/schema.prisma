@@ -121,6 +121,10 @@ model MenuItem {
   price        Float
   imageUrl     String?
   available    Boolean      @default(true)
+  featured     Boolean      @default(false)
+  popular      Boolean      @default(false)
+  todaySpecial Boolean      @default(false)
+  options      String? // JSON: { variants: [{name,priceAdj}], addOns: [{name,price}] }
   // Stock tracking (null = not tracked in inventory)
   stockQty          Int?
   lowStockThreshold Int        @default(5)
@@ -172,4 +176,5 @@ model OrderItem {
   quantity   Int
   unitPrice  Float
   subtotal   Float
+  selectedOptions String? // JSON: { variant, addOns: [{name,price}], specialInstructions }
 }
