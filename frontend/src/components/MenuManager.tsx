@@ -354,56 +354,13 @@ export function MenuManager() {
       )}
 
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Menu</h1>
-        <p className="mt-1 text-sm text-[#a8a29e]">
-          Manage categories and items. Changes appear on the customer menu automatically.
-          Unavailable items are hidden from customers.
+        <h1 className="text-2xl font-semibold tracking-tight text-[var(--text)]">Menu</h1>
+        <p className="mt-1 text-sm text-[var(--text-muted)]">
+          Manage menu items. Changes appear on the customer menu automatically.
+          Unavailable items are hidden from customers. Use Categories in the sidebar to organize groups.
         </p>
-        {message && <p className="mt-2 text-sm text-[#e8c547]">{message}</p>}
+        {message && <p className="mt-2 text-sm text-[var(--gold-bright)]">{message}</p>}
       </div>
-
-      {/* Categories */}
-      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-        <h2 className="font-medium text-white">Categories</h2>
-        <form onSubmit={createCategory} className="mt-3 flex flex-wrap gap-2">
-          <input
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            placeholder="New category name"
-            className="min-w-[200px] flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none focus:border-[#d4a017]"
-          />
-          <button
-            type="submit"
-            className="rounded-xl bg-[#d4a017] px-4 py-2 text-sm font-semibold text-[#000000]"
-          >
-            Add category
-          </button>
-        </form>
-        <ul className="mt-4 flex flex-wrap gap-2">
-          {categories.map((c) => (
-            <li
-              key={c.id}
-              className="flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 text-sm ring-1 ring-white/10"
-            >
-              <span>{c.name}</span>
-              <button
-                type="button"
-                onClick={() => { setCatToEdit(c); setCatEditName(c.name); }}
-                className="text-xs text-[#a8a29e] hover:text-white"
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                onClick={() => setCatToDel(c)}
-                className="text-xs text-red-300 hover:text-red-200"
-              >
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
 
       {/* Item form */}
       <section ref={formRef} className="rounded-2xl border bg-white/[0.03] p-5 transition-colors duration-300" style={{ borderColor: editingItem ? "rgba(212,160,23,0.4)" : "rgba(255,255,255,0.1)" }}>
@@ -535,80 +492,76 @@ export function MenuManager() {
         </form>
       </section>
 
-      {/* Items list */}
-      <section className="space-y-6">
-        {categories.map((cat) => (
-          <div key={cat.id}>
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[#a8a29e]">
-              {cat.name}
-            </h3>
-            <div className="space-y-2">
-              {cat.items.length === 0 && (
-                <p className="text-sm text-[#78716c]">No items yet.</p>
-              )}
-              {cat.items.map((item) => (
-                <div
-                  key={item.id}
-                  className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-white/[0.03] px-4 py-3 transition-all duration-200 ${
-                    editingItem?.id === item.id
-                      ? "border-[#d4a017]/50 bg-[#d4a017]/[0.04] shadow-[0_0_15px_rgba(212,160,23,0.08)]"
-                      : "border-white/10"
-                  }`}
-                >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-[#141414]">
-                      {item.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={item.imageUrl}
-                          alt={item.name}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center">
-                          <ImagePlus className="h-4 w-4 text-[#555]" />
-                        </div>
-                      )}
+      {/* Items list — flat list (categories managed on Categories page) */}
+      <section className="space-y-2">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+          All menu items
+        </h2>
+        {categories.flatMap((cat) => cat.items).length === 0 && (
+          <p className="text-sm text-[var(--text-dim)]">No items yet.</p>
+        )}
+        {categories.flatMap((cat) =>
+          cat.items.map((item) => (
+            <div
+              key={item.id}
+              className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-[var(--bg-card)] px-4 py-3 transition-all duration-200 ${
+                editingItem?.id === item.id
+                  ? "border-[var(--gold)]/50 bg-[var(--gold)]/[0.04] shadow-[0_0_15px_rgba(212,160,23,0.08)]"
+                  : "border-[var(--border)]"
+              }`}
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)]">
+                  {item.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <ImagePlus className="h-4 w-4 text-[var(--text-dim)]" />
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-white">
-                        {item.name}{" "}
-                        <span className="text-[#a8a29e]">· {formatMoney(item.price)}</span>
-                      </p>
-                      <p className="text-xs text-[#78716c]">
-                        {item.available ? "Available" : "Unavailable"}
-                        {item.description ? ` · ${item.description}` : ""}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => toggleAvailable(item)}
-                      className="rounded-lg bg-white/5 px-2.5 py-1.5 ring-1 ring-white/10 hover:bg-white/10"
-                    >
-                      {item.available ? "Disable" : "Enable"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => startEdit(item)}
-                      className="rounded-lg bg-white/5 px-2.5 py-1.5 ring-1 ring-white/10 hover:bg-white/10"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setItemToDelete(item)}
-                      className="rounded-lg bg-red-500/10 px-2.5 py-1.5 text-red-300 ring-1 ring-red-500/20 hover:bg-red-500/20"
-                    >
-                      Delete
-                    </button>
-                  </div>
+                  )}
                 </div>
-              ))}
+                <div className="min-w-0">
+                  <p className="font-medium text-[var(--text)]">
+                    {item.name}{" "}
+                    <span className="text-[var(--text-muted)]">· {formatMoney(item.price)}</span>
+                  </p>
+                  <p className="text-xs text-[var(--text-dim)]">
+                    {item.available ? "Available" : "Unavailable"}
+                    {item.description ? ` · ${item.description}` : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => toggleAvailable(item)}
+                  className="rounded-lg border border-[var(--border)] bg-[var(--bg-soft)] px-2.5 py-1.5 hover:bg-[var(--bg-elevated)]"
+                >
+                  {item.available ? "Disable" : "Enable"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startEdit(item)}
+                  className="rounded-lg border border-[var(--border)] bg-[var(--bg-soft)] px-2.5 py-1.5 hover:bg-[var(--bg-elevated)]"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setItemToDelete(item)}
+                  className="rounded-lg bg-red-500/10 px-2.5 py-1.5 text-red-300 ring-1 ring-red-500/20 hover:bg-red-500/20"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </section>
     </div>
   );

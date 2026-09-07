@@ -27,13 +27,14 @@ model Restaurant {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  users      User[]
-  tables     Table[]
-  categories MenuCategory[]
-  menuItems  MenuItem[]
-  orders     Order[]
-  customers  Customer[]
-  payments   Payment[]
+  users         User[]
+  tables        Table[]
+  categories    MenuCategory[]
+  menuItems     MenuItem[]
+  orders        Order[]
+  customers     Customer[]
+  payments      Payment[]
+  tableRequests TableRequest[]
 }
 
 model Customer {
@@ -93,9 +94,29 @@ model Table {
   active       Boolean    @default(true)
   createdAt    DateTime   @default(now())
 
-  orders Order[]
+  orders        Order[]
+  tableRequests TableRequest[]
 
   @@unique([restaurantId, tableNumber])
+}
+
+/// Customer service request from Digital Menu (Call Waiter / Request Bill)
+model TableRequest {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  tableId      String
+  table        Table      @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  /// WAITER | BILL
+  type         String
+  message      String
+  /// PENDING | ACKNOWLEDGED
+  status       String     @default("PENDING")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([restaurantId, status, createdAt])
+  @@index([restaurantId, createdAt])
 }
 
 model MenuCategory {

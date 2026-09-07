@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
+import { FileSpreadsheet } from "lucide-react";
+import * as XLSX from "xlsx";
 import { formatMoney, STATUS_LABELS, ORDER_STATUSES, type OrderStatus } from "@/lib/utils";
 
 type ReportData = {
@@ -52,6 +54,10 @@ export function ReportsManager() {
   const [to, setTo] = useState(() => toInput(new Date()));
   const [data, setData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [importing, setImporting] = useState(false);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -108,23 +114,101 @@ export function ReportsManager() {
     [data]
   );
 
+  async function onImportFile(file: File) {
+    setImportError(null);
+    setImportMessage(null);
+
+    const lower = file.name.toLowerCase();
+    if (!lower.endsWith(".xlsx") && !lower.endsWith(".xls") && !lower.endsWith(".csv")) {
+      setImportError("Please select an Excel file (.xlsx, .xls) or CSV (.csv).");
+      return;
+    }
+    if (file.size === 0) {
+      setImportError("The selected file is empty.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setImportError("File must be under 5MB.");
+      return;
+    }
+
+    setImporting(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      if (!sheetName) {
+        setImportError("Workbook has no sheets.");
+        return;
+      }
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+      if (!rows.length) {
+        setImportError("No data rows found in the Excel file.");
+        return;
+      }
+
+      const res = await fetch("/api/dashboard/reports/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows }),
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        setImportError(payload.error || "Import failed.");
+        return;
+      }
+
+      setImportMessage(
+        `Imported ${payload.paymentsCreated} payment(s) and ${payload.customersCreated} customer(s). Skipped ${payload.skipped}.`
+      );
+      await load();
+    } catch (e) {
+      setImportError(e instanceof Error ? e.message : "Could not read Excel file.");
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">Reports</h1>
-          <p className="mt-1 text-sm text-[#a8a29e]">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text)]">Reports</h1>
+          <p className="mt-1 text-sm text-[var(--text-muted)]">
             Sales, orders, and menu performance for the selected period.
           </p>
+          {importMessage && <p className="mt-2 text-sm text-[var(--success)]">{importMessage}</p>}
+          {importError && <p className="mt-2 text-sm text-[var(--danger)]">{importError}</p>}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex gap-1 rounded-xl border border-white/10 bg-white/5 p-1 text-xs">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void onImportFile(file);
+            }}
+          />
+          <button
+            type="button"
+            disabled={importing}
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--gold)]/50 bg-[var(--gold)]/10 px-3 py-2 text-sm font-semibold text-[var(--gold-bright)] transition hover:bg-[var(--gold)]/20 disabled:opacity-50"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            {importing ? "Importing…" : "Import Excel File"}
+          </button>
+          <div className="flex gap-1 rounded-xl border border-[var(--border)] bg-[var(--bg-soft)] p-1 text-xs">
             {presets.map((p) => (
               <button
                 key={p.label}
                 type="button"
                 onClick={p.set}
-                className="rounded-lg px-3 py-1.5 text-[#a8a29e] hover:bg-white/10 hover:text-white"
+                className="rounded-lg px-3 py-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-card)] hover:text-[var(--text)]"
               >
                 {p.label}
               </button>
@@ -134,35 +218,35 @@ export function ReportsManager() {
             type="date"
             value={from}
             onChange={(e) => e.target.value && setFrom(e.target.value)}
-            className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none focus:border-[#d4a017]"
+            className="input-theme rounded-xl px-3 py-2 text-sm"
           />
-          <span className="text-xs text-[#78716c]">→</span>
+          <span className="text-xs text-[var(--text-dim)]">→</span>
           <input
             type="date"
             value={to}
             onChange={(e) => e.target.value && setTo(e.target.value)}
-            className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none focus:border-[#d4a017]"
+            className="input-theme rounded-xl px-3 py-2 text-sm"
           />
         </div>
       </div>
 
-      {loading && <p className="text-sm text-[#a8a29e]">Loading reports…</p>}
+      {loading && <p className="text-sm text-[var(--text-muted)]">Loading reports…</p>}
 
       {!loading && data && (
         <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {[
-              { label: "Revenue", value: formatMoney(data.summary.revenue), tone: "text-[#f0c14b]" },
-              { label: "Orders", value: String(data.summary.totalOrders), tone: "text-white" },
-              { label: "Completed", value: String(data.summary.completedOrders), tone: "text-[#22c55e]" },
+              { label: "Revenue", value: formatMoney(data.summary.revenue), tone: "text-[var(--gold-bright)]" },
+              { label: "Orders", value: String(data.summary.totalOrders), tone: "text-[var(--text)]" },
+              { label: "Completed", value: String(data.summary.completedOrders), tone: "text-[var(--success)]" },
               {
                 label: "Avg order value",
                 value: formatMoney(data.summary.averageOrderValue),
-                tone: "text-[#3b82f6]",
+                tone: "text-[var(--info)]",
               },
             ].map((k) => (
-              <div key={k.label} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                <p className="text-xs text-[#a8a29e]">{k.label}</p>
+              <div key={k.label} className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
+                <p className="text-xs text-[var(--text-muted)]">{k.label}</p>
                 <p className={`mt-1 text-2xl font-semibold ${k.tone}`}>{k.value}</p>
               </div>
             ))}

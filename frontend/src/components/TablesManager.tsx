@@ -26,7 +26,11 @@ export function TablesManager() {
   useEffect(() => {
     const timer = setTimeout(() => {
       load();
-      setOrigin(window.location.origin);
+      // NFC/QR must open the Digital Menu app directly (not the CRM host).
+      const menuBase = (
+        process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+      ).replace(/\/$/, "");
+      setOrigin(menuBase);
     }, 0);
     return () => clearTimeout(timer);
   }, [load]);
@@ -100,7 +104,9 @@ export function TablesManager() {
                     rel="noreferrer"
                     className="text-[#e8c547] underline-offset-2 hover:underline"
                   >
-                    /r/{slug}/t/{t.tableNumber}
+                    {origin
+                      ? `${origin}/r/${slug}/t/${t.tableNumber}`
+                      : `/r/${slug}/t/${t.tableNumber}`}
                   </a>
                 </td>
                 <td className="px-4 py-3 font-mono text-xs text-[#a8a29e]">{t.uniqueCode}</td>

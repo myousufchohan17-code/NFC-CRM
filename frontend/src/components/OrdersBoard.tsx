@@ -624,8 +624,8 @@ export function OrdersBoard() {
       {/* Top header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl text-white sm:text-3xl">Dashboard</h1>
-          <p className="text-sm text-[#9ca3af]">
+          <h1 className="font-display text-2xl text-[var(--text)] sm:text-3xl">Dashboard</h1>
+          <p className="text-sm text-[var(--text-muted)]">
             Live kitchen board
             {lastFetch ? ` · synced ${format(new Date(lastFetch), "HH:mm:ss")}` : ""}
           </p>
@@ -746,12 +746,12 @@ export function OrdersBoard() {
         {kpi.map((card) => (
           <div
             key={card.label}
-            className="rounded-2xl border border-[#2a2a2a] bg-[#141414] p-4"
+            className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4"
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs text-[#9ca3af]">{card.label}</p>
-                <p className="mt-1 text-2xl font-semibold text-white">{card.value}</p>
+                <p className="text-xs text-[var(--text-muted)]">{card.label}</p>
+                <p className="mt-1 text-2xl font-semibold text-[var(--text)]">{card.value}</p>
                 {card.trend && <p className="mt-1 text-xs text-[#22c55e]">{card.trend}</p>}
                 {"sub" in card && card.sub && (
                   <p className="mt-1 text-xs text-[#888]">{card.sub}</p>
@@ -765,11 +765,15 @@ export function OrdersBoard() {
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
-        {/* Kitchen board */}
-        <section className="rounded-2xl border border-[#2a2a2a] bg-[#0e0e0e] p-4">
+      {/* Kitchen board — horizontal order cards per status */}
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="font-display text-xl text-white">Kitchen Orders</h2>
+            <div>
+              <h2 className="font-display text-xl text-[var(--text)]">Kitchen Orders</h2>
+              <p className="mt-0.5 text-xs text-[var(--text-muted)]">
+                POS-ready board — edit items, advance status, and keep service in sync
+              </p>
+            </div>
             <div className="flex gap-2 text-xs">
               {([
                 { key: "ALL" as const, label: "All Orders" },
@@ -782,8 +786,8 @@ export function OrdersBoard() {
                   onClick={() => setOrderTypeFilter(f.key)}
                   className={`rounded-full px-3 py-1 transition ${
                     orderTypeFilter === f.key
-                      ? "bg-[#d4a017]/20 text-[#e8c547]"
-                      : "border border-[#2a2a2a] text-[#9ca3af] hover:border-[#d4a017]/40 hover:text-[#e8c547]"
+                      ? "bg-[var(--gold)]/20 text-[var(--gold-bright)]"
+                      : "border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--gold)]/40 hover:text-[var(--gold-bright)]"
                   }`}
                 >
                   {f.label}
@@ -792,26 +796,30 @@ export function OrdersBoard() {
             </div>
           </div>
 
-          {loading && <p className="py-10 text-center text-sm text-[#6b7280]">Loading orders…</p>}
+          {loading && <p className="py-10 text-center text-sm text-[var(--text-dim)]">Loading orders…</p>}
 
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {/* Horizontal status columns: New → Preparing → Ready → Completed */}
+          <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory lg:gap-4">
             {COLUMNS.map((col) => {
               const colOrders = filtered.filter((o) =>
                 col.key.includes(o.status as OrderStatus)
               );
               return (
-                <div key={col.title} className="min-w-0 overflow-hidden">
+                <div
+                  key={col.title}
+                  className="w-[min(100%,300px)] shrink-0 snap-start rounded-xl border border-[var(--border)] bg-[var(--bg-card)]/60 p-3 sm:w-[320px] lg:min-w-0 lg:flex-1"
+                >
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <h3 className={`truncate text-xs font-bold uppercase tracking-wider ${col.color}`}>
                       {col.title}
                     </h3>
-                    <span className="shrink-0 rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-[#9ca3af]">
+                    <span className="shrink-0 rounded-full bg-[var(--bg-soft)] px-2 py-0.5 text-[10px] text-[var(--text-muted)]">
                       {colOrders.length}
                     </span>
                   </div>
-                  <div className="space-y-3">
+                  <div className="max-h-[min(70vh,640px)] space-y-3 overflow-y-auto pr-0.5">
                     {colOrders.length === 0 && (
-                      <p className="rounded-xl border border-dashed border-[#2a2a2a] px-3 py-6 text-center text-xs text-[#4b5563]">
+                      <p className="rounded-xl border border-dashed border-[var(--border)] px-3 py-6 text-center text-xs text-[var(--text-dim)]">
                         No orders
                       </p>
                     )}
@@ -827,52 +835,52 @@ export function OrdersBoard() {
                       return (
                         <article
                           key={order.id}
-                          className={`min-w-0 overflow-hidden rounded-xl border bg-[#141414] p-3 ${
+                          className={`min-w-0 overflow-hidden rounded-xl border bg-[var(--bg-card)] p-3 shadow-[var(--shadow)] ${
                             isNew
-                              ? "border-[#ef4444]/50 shadow-[0_0_20px_rgba(239,68,68,0.12)]"
-                              : "border-[#2a2a2a]"
+                              ? "border-[var(--danger)]/50 shadow-[0_0_20px_rgba(239,68,68,0.12)]"
+                              : "border-[var(--border)]"
                           }`}
                         >
                           <div className="flex min-w-0 items-start justify-between gap-2">
                             <div className="min-w-0">
-                              <p className="truncate font-semibold text-white">{order.orderNumber}</p>
-                              <p className="mt-0.5 truncate text-xs text-[#9ca3af]">
+                              <p className="truncate font-semibold text-[var(--text)]">{order.orderNumber}</p>
+                              <p className="mt-0.5 truncate text-xs text-[var(--text-muted)]">
                                 Table {order.table.tableNumber} · {order.orderType === "TAKE_AWAY" ? "Take Away" : "Dine In"}
                               </p>
                             </div>
-                            <span className="shrink-0 rounded-md bg-white/5 px-1.5 py-0.5 text-[10px] tabular-nums text-[#9ca3af]">
+                            <span className="shrink-0 rounded-md bg-[var(--bg-soft)] px-1.5 py-0.5 text-[10px] tabular-nums text-[var(--text-muted)]">
                               {format(new Date(order.createdAt), "HH:mm")}
                             </span>
                           </div>
 
                           <div className="mt-3 flex min-w-0 items-start gap-2.5">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#d4a017]/15 text-[10px] font-bold text-[#e8c547]">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--gold)]/15 text-[10px] font-bold text-[var(--gold-bright)]">
                               {initials || "?"}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-xs font-medium text-[#e5e7eb]" title={order.customerName}>
+                              <p className="truncate text-xs font-medium text-[var(--text)]" title={order.customerName}>
                                 {order.customerName}
                               </p>
                               {order.customerEmail && (
                                 <p
-                                  className="mt-0.5 truncate text-[11px] text-[#6b7280]"
+                                  className="mt-0.5 truncate text-[11px] text-[var(--text-dim)]"
                                   title={order.customerEmail}
                                 >
                                   {order.customerEmail}
                                 </p>
                               )}
                               {order.customerPhone && (
-                                <p className="mt-0.5 truncate text-[11px] text-[#6b7280]">
+                                <p className="mt-0.5 truncate text-[11px] text-[var(--text-dim)]">
                                   {order.customerPhone}
                                 </p>
                               )}
                             </div>
                           </div>
 
-                          <ul className="mt-3 space-y-1.5 border-t border-[#1f1f1f] pt-2.5 text-xs text-[#d1d5db]">
+                          <ul className="mt-3 max-h-28 space-y-1.5 overflow-y-auto border-t border-[var(--border)] pt-2.5 text-xs text-[var(--text)]">
                             {order.items.map((item) => (
                               <li key={item.id} className="flex min-w-0 gap-2">
-                                <span className="shrink-0 tabular-nums text-[#9ca3af]">
+                                <span className="shrink-0 tabular-nums text-[var(--text-muted)]">
                                   {item.quantity}×
                                 </span>
                                 <span className="min-w-0 break-words">{item.itemName}</span>
@@ -880,13 +888,16 @@ export function OrdersBoard() {
                             ))}
                           </ul>
                           {order.specialRequest && (
-                            <p className="mt-2 break-words rounded-lg bg-[#d4a017]/10 px-2 py-1.5 text-[11px] leading-snug text-[#f0c14b]">
+                            <p className="mt-2 break-words rounded-lg bg-[var(--gold)]/10 px-2 py-1.5 text-[11px] leading-snug text-[var(--gold-bright)]">
                               {order.specialRequest}
                             </p>
                           )}
-                          <div className="mt-3 flex items-center justify-between gap-2 border-t border-[#1f1f1f] pt-2.5 text-xs">
-                            <span className="font-semibold tabular-nums text-[#f0c14b]">
+                          <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--border)] pt-2.5 text-xs">
+                            <span className="font-semibold tabular-nums text-[var(--gold-bright)]">
                               {formatMoney(order.total)}
+                            </span>
+                            <span className="rounded-full bg-[var(--bg-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                              POS
                             </span>
                           </div>
                           {(nxt || order.status === "READY" || order.status === "NEW" || order.status === "ACCEPTED") &&
@@ -912,10 +923,10 @@ export function OrdersBoard() {
                             type="button"
                             disabled={deletingId === order.id || updatingId === order.id}
                             onClick={() => openEditOrder(order)}
-                            className="mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg border border-[#d4a017]/50 bg-[#d4a017]/10 py-2 text-[10px] font-bold uppercase tracking-wide text-[#e8c547] transition hover:bg-[#d4a017]/20 disabled:opacity-50"
+                            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--gold)]/50 bg-[var(--gold)]/10 py-2 text-[10px] font-bold uppercase tracking-wide text-[var(--gold-bright)] transition hover:bg-[var(--gold)]/20 disabled:opacity-50"
                           >
                             <Pencil className="h-3 w-3" />
-                            Edit Order
+                            Edit Order (POS)
                           </button>
                           <button
                             type="button"
@@ -935,10 +946,10 @@ export function OrdersBoard() {
           </div>
         </section>
 
-        {/* Right analytics */}
-        <aside className="space-y-4">
-          <div className="rounded-2xl border border-[#2a2a2a] bg-[#141414] p-4">
-            <h3 className="font-medium text-white">Today&apos;s Overview</h3>
+      {/* Overview widgets moved to bottom */}
+      <div className="grid gap-4 lg:grid-cols-3">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
+            <h3 className="font-medium text-[var(--text)]">Today&apos;s Overview</h3>
             <div className="mt-4 flex items-center gap-4">
               <div
                 className="relative h-28 w-28 shrink-0 rounded-full"
@@ -951,10 +962,10 @@ export function OrdersBoard() {
                   )`,
                 }}
               >
-                <div className="absolute inset-3 flex items-center justify-center rounded-full bg-[#141414] text-center">
+                <div className="absolute inset-3 flex items-center justify-center rounded-full bg-[var(--bg-card)] text-center">
                   <div>
                     <p className="text-lg font-bold">{todayOrders.length}</p>
-                    <p className="text-[9px] text-[#6b7280]">Orders</p>
+                    <p className="text-[9px] text-[var(--text-dim)]">Orders</p>
                   </div>
                 </div>
               </div>
@@ -967,45 +978,44 @@ export function OrdersBoard() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#2a2a2a] bg-[#141414] p-4">
-            <h3 className="font-medium text-white">Revenue Overview</h3>
-            <p className="mt-1 text-xs text-[#22c55e]">+22% from yesterday</p>
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
+            <h3 className="font-medium text-[var(--text)]">Revenue Overview</h3>
+            <p className="mt-1 text-xs text-[var(--success)]">+22% from yesterday</p>
             <div className="mt-4 flex h-24 items-end gap-1">
               {[40, 55, 35, 70, 60, 85, 50, 95, 75, 65, 80, 90].map((h, i) => (
                 <div
                   key={i}
-                  className="flex-1 rounded-t bg-gradient-to-t from-[#d4a017]/30 to-[#f0c14b]"
+                  className="flex-1 rounded-t bg-gradient-to-t from-[var(--gold)]/30 to-[var(--gold-bright)]"
                   style={{ height: `${h}%` }}
                 />
               ))}
             </div>
-            <p className="mt-2 text-right text-sm font-semibold text-[#f0c14b]">{formatMoney(revenue)}</p>
+            <p className="mt-2 text-right text-sm font-semibold text-[var(--gold-bright)]">{formatMoney(revenue)}</p>
           </div>
 
-          <div className="rounded-2xl border border-[#2a2a2a] bg-[#141414] p-4">
-            <h3 className="font-medium text-white">Top Selling Items</h3>
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
+            <h3 className="font-medium text-[var(--text)]">Top Selling Items</h3>
             <ul className="mt-3 space-y-3">
               {topItems.length === 0 && (
-                <li className="text-xs text-[#6b7280]">No sales yet today.</li>
+                <li className="text-xs text-[var(--text-dim)]">No sales yet today.</li>
               )}
               {topItems.map(([name, qty], idx) => (
                 <li key={name} className="flex items-center gap-3 text-sm">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#d4a017]/15 text-xs font-bold text-[#f0c14b]">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--gold)]/15 text-xs font-bold text-[var(--gold-bright)]">
                     {idx + 1}
                   </span>
-                  <span className="flex-1 truncate text-[#d1d5db]">{name}</span>
-                  <span className="text-xs text-[#9ca3af]">{qty} sold</span>
+                  <span className="flex-1 truncate text-[var(--text)]">{name}</span>
+                  <span className="text-xs text-[var(--text-muted)]">{qty} sold</span>
                 </li>
               ))}
             </ul>
           </div>
-        </aside>
       </div>
 
       {/* Bottom panels */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-2xl border border-[#2a2a2a] bg-[#141414] p-4">
-          <h3 className="font-medium text-white">Table Status</h3>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
+          <h3 className="font-medium text-[var(--text)]">Table Status</h3>
           <div className="mt-4 grid grid-cols-2 gap-3">
             {[
               { label: "Available", value: available, color: "text-[#22c55e] border-[#22c55e]/30" },
@@ -1013,34 +1023,34 @@ export function OrdersBoard() {
               { label: "Reserved", value: 0, color: "text-[#ef4444] border-[#ef4444]/30" },
               { label: "Total", value: tables.length, color: "text-[#3b82f6] border-[#3b82f6]/30" },
             ].map((t) => (
-              <div key={t.label} className={`rounded-xl border bg-[#0e0e0e] p-3 ${t.color}`}>
+              <div key={t.label} className={`rounded-xl border bg-[var(--bg-elevated)] p-3 ${t.color}`}>
                 <p className="text-2xl font-bold">{t.value}</p>
-                <p className="text-xs text-[#9ca3af]">{t.label}</p>
+                <p className="text-xs text-[var(--text-muted)]">{t.label}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#2a2a2a] bg-[#141414] p-4">
-          <h3 className="font-medium text-white">Recent Activity</h3>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
+          <h3 className="font-medium text-[var(--text)]">Recent Activity</h3>
           <ul className="mt-3 space-y-3">
             {recentActivity.length === 0 && (
-              <li className="text-xs text-[#6b7280]">No recent activity.</li>
+              <li className="text-xs text-[var(--text-dim)]">No recent activity.</li>
             )}
             {recentActivity.map((a) => (
               <li key={a.id} className="flex items-start gap-3 text-xs">
                 <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${a.tone}`} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[#d1d5db]">{a.text}</p>
-                  <p className="text-[#6b7280]">{a.time}</p>
+                  <p className="text-[var(--text)]">{a.text}</p>
+                  <p className="text-[var(--text-dim)]">{a.time}</p>
                 </div>
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="rounded-2xl border border-[#2a2a2a] bg-[#141414] p-4">
-          <h3 className="font-medium text-white">Staff on Duty</h3>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
+          <h3 className="font-medium text-[var(--text)]">Staff on Duty</h3>
           <ul className="mt-3 space-y-3">
             {[
               { name: "Ali Khan", role: "Head Chef", initial: "A" },
@@ -1049,14 +1059,14 @@ export function OrdersBoard() {
               { name: "Usman Javed", role: "Cashier", initial: "U" },
             ].map((s) => (
               <li key={s.name} className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#d4a017]/20 text-sm font-bold text-[#e8c547]">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--gold)]/20 text-sm font-bold text-[var(--gold-bright)]">
                   {s.initial}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm text-white">{s.name}</p>
-                  <p className="text-xs text-[#6b7280]">{s.role}</p>
+                  <p className="text-sm text-[var(--text)]">{s.name}</p>
+                  <p className="text-xs text-[var(--text-dim)]">{s.role}</p>
                 </div>
-                <span className="text-[10px] font-semibold text-[#22c55e]">● Online</span>
+                <span className="text-[10px] font-semibold text-[var(--success)]">● Online</span>
               </li>
             ))}
           </ul>

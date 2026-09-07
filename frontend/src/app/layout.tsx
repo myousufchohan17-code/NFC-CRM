@@ -26,8 +26,20 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${playfair.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[#050505] text-[#f5f5f5]">
+    <html
+      lang="en"
+      data-theme="dark"
+      className={`${dmSans.variable} ${playfair.variable} dark h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('crm-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);document.documentElement.classList.toggle('dark',t==='dark');}}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body className="flex min-h-full flex-col bg-[var(--bg)] text-[var(--text)]">
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -71,6 +71,7 @@ export async function POST(request: Request) {
     {
       table,
       url: `/r/${restaurant.slug}/t/${table.tableNumber}`,
+      absoluteUrl: `${(process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "")}/r/${restaurant.slug}/t/${table.tableNumber}`,
     },
     { status: 201 }
   );
