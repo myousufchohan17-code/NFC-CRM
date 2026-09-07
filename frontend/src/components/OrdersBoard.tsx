@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
-import { Bell, Pencil, Search } from "lucide-react";
+import { Pencil, Printer, Search } from "lucide-react";
+import { printOrderReceipt, type ReceiptRestaurant } from "@/lib/printReceipt";
 import { formatMoney, nextStatus, ORDER_STATUSES, STATUS_LABELS, type OrderStatus } from "@/lib/utils";
 
 type OrderItem = {
@@ -80,6 +81,7 @@ export function OrdersBoard() {
   const [editNotice, setEditNotice] = useState<string | null>(null);
   const [orderTypeFilter, setOrderTypeFilter] = useState<"ALL" | "DINE_IN" | "TAKE_AWAY">("ALL");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [restaurantInfo, setRestaurantInfo] = useState<ReceiptRestaurant | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
   const fetchAll = useCallback(async () => {
@@ -114,6 +116,29 @@ export function OrdersBoard() {
   }, [fetchAll]);
 
   useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/dashboard/profile", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && data.restaurant) {
+          setRestaurantInfo({
+            name: data.restaurant.name,
+            phone: data.restaurant.phone,
+            address: data.restaurant.address,
+          });
+        }
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!search.trim()) return;
     function handleClickOutside(e: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
@@ -123,6 +148,10 @@ export function OrdersBoard() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [search]);
+
+  function handlePrintReceipt(order: Order) {
+    printOrderReceipt(order, restaurantInfo ?? undefined);
+  }
 
   const todayOrders = useMemo(() => {
     const start = new Date();
@@ -726,17 +755,8 @@ export function OrdersBoard() {
               </div>
             )}
           </div>
-          <button type="button" className="relative rounded-full border border-[#2a2a2a] p-2.5 text-[#d4a017]">
-            <Bell className="h-5 w-5" />
-            {(counts.NEW ?? 0) > 0 && (
-              <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#ef4444]" />
-            )}
-          </button>
-          <div className="hidden rounded-xl border border-[#2a2a2a] bg-[#141414] px-3 py-2 text-xs text-[#9ca3af] md:block">
+          <div className="hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 text-xs text-[var(--text-muted)] md:block">
             {format(new Date(), "dd MMM, yyyy EEEE")}
-          </div>
-          <div className="hidden rounded-xl border border-[#d4a017]/30 bg-[#141414] px-3 py-2 text-xs text-[#e8c547] md:block">
-            Bella Cucina ▾
           </div>
         </div>
       </div>
@@ -917,6 +937,19 @@ export function OrdersBoard() {
                               className={`mt-3 w-full rounded-lg py-2 text-xs font-bold uppercase tracking-wide transition ${col.btnClass}`}
                             >
                               View Details
+                            </button>
+                          )}
+                          {(order.status === "NEW" ||
+                            order.status === "ACCEPTED" ||
+                            order.status === "PREPARING" ||
+                            order.status === "READY") && (
+                            <button
+                              type="button"
+                              onClick={() => handlePrintReceipt(order)}
+                              className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-soft)] py-2 text-[10px] font-bold uppercase tracking-wide text-[var(--text)] transition hover:border-[var(--gold)]/40 hover:text-[var(--gold-bright)]"
+                            >
+                              <Printer className="h-3 w-3" />
+                              Print Receipt
                             </button>
                           )}
                           <button

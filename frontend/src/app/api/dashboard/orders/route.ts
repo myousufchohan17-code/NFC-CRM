@@ -1,7 +1,109 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { generateOrderNumber } from "@/lib/orders";
 import { requireStaff } from "@/lib/session";
 import { nextStatus, ORDER_STATUSES } from "@/lib/utils";
+
+/**
+ * Create a walking-customer order from an existing menu item.
+ * Uses existing order/item pricing fields — does not alter table-based order flow.
+ */
+export async function POST(request: Request) {
+  const session = await requireStaff();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+    const menuItemId = typeof body.menuItemId === "string" ? body.menuItemId : "";
+    const quantity = Math.max(1, Math.floor(Number(body.quantity) || 1));
+    const walkingCustomer = body.walkingCustomer === true;
+
+    if (!walkingCustomer) {
+      return NextResponse.json(
+        { error: "Only walking-customer order creation is supported here" },
+        { status: 400 }
+      );
+    }
+    if (!menuItemId) {
+      return NextResponse.json({ error: "menuItemId required" }, { status: 400 });
+    }
+
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: session.user.restaurantId },
+      select: { id: true, name: true, phone: true, address: true, slug: true },
+    });
+    if (!restaurant) {
+      return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
+    }
+
+    const menuItem = await prisma.menuItem.findFirst({
+      where: {
+        id: menuItemId,
+        restaurantId: restaurant.id,
+        available: true,
+      },
+    });
+    if (!menuItem) {
+      return NextResponse.json({ error: "Menu item not found or unavailable" }, { status: 404 });
+    }
+
+    const table = await prisma.table.findFirst({
+      where: { restaurantId: restaurant.id },
+      orderBy: { tableNumber: "asc" },
+    });
+    if (!table) {
+      return NextResponse.json(
+        { error: "Create at least one table before taking walking-customer orders" },
+        { status: 400 }
+      );
+    }
+
+    const unitPrice = menuItem.price;
+    const subtotal = quantity * unitPrice;
+    const orderNumber = await generateOrderNumber(restaurant.id, restaurant.slug);
+
+    const order = await prisma.order.create({
+      data: {
+        restaurantId: restaurant.id,
+        tableId: table.id,
+        orderNumber,
+        customerName: "Walking Customer",
+        orderType: "TAKE_AWAY",
+        status: "NEW",
+        total: subtotal,
+        items: {
+          create: [
+            {
+              menuItemId: menuItem.id,
+              itemName: menuItem.name,
+              quantity,
+              unitPrice,
+              subtotal,
+            },
+          ],
+        },
+      },
+      include: { items: true, table: true },
+    });
+
+    return NextResponse.json(
+      {
+        order,
+        restaurant: {
+          name: restaurant.name,
+          phone: restaurant.phone,
+          address: restaurant.address,
+        },
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("Create walking order error:", error);
+    return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
+  }
+}
 
 /** List orders for the logged-in staff member's restaurant only */
 export async function GET(request: Request) {

@@ -10,7 +10,6 @@ import {
   Package,
   CreditCard,
   Settings,
-  ChevronDown,
 } from "lucide-react";
 import { auth, signOut } from "@/lib/auth";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -56,6 +55,35 @@ export async function DashboardShell({
   void newOrderCount;
   void preparingCount;
 
+  const navbarControls = (
+    <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex min-w-0 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-2.5 py-1.5">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--gold)]/20 text-[11px] font-bold leading-none text-[var(--gold-bright)]">
+          {userName.slice(0, 1).toUpperCase()}
+        </span>
+        <div className="min-w-0 leading-tight">
+          <p className="truncate text-sm font-medium text-[var(--text)]">{userName}</p>
+          <p className="truncate text-[10px] text-[var(--text-dim)]">{roleLabel}</p>
+        </div>
+      </div>
+      <ThemeToggle className="shrink-0" />
+      <TableRequestsPanel className="shrink-0" />
+      <form
+        action={async () => {
+          "use server";
+          await signOut({ redirectTo: "/login" });
+        }}
+      >
+        <button
+          type="submit"
+          className="rounded-lg border border-[var(--border)] px-2.5 py-2 text-xs text-[var(--text-muted)] transition hover:border-[var(--gold)]/40 hover:text-[var(--gold-bright)]"
+        >
+          Log out
+        </button>
+      </form>
+    </div>
+  );
+
   return (
     <div className="flex min-h-screen bg-[var(--bg)] text-[var(--text)]">
       <aside className="hidden w-[240px] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--bg-sidebar)] lg:flex">
@@ -68,37 +96,6 @@ export async function DashboardShell({
               {restaurantName}
             </p>
             <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-dim)]">Restaurant</p>
-          </div>
-        </div>
-
-        <div className="border-b border-[var(--border)] p-4">
-          <div className="mb-3 flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--gold)]/20 text-sm font-bold leading-none text-[var(--gold-bright)]">
-              {userName.slice(0, 1).toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium leading-5 text-[var(--text)]">{userName}</p>
-              <p className="truncate text-xs leading-4 text-[var(--text-muted)]">{roleLabel}</p>
-            </div>
-            <ChevronDown className="h-4 w-4 shrink-0 self-center text-[var(--text-dim)]" />
-          </div>
-          <div className="mb-2 flex items-center gap-2">
-            <ThemeToggle className="shrink-0" />
-            <TableRequestsPanel className="shrink-0" />
-            <form
-              className="min-w-0 flex-1"
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/login" });
-              }}
-            >
-              <button
-                type="submit"
-                className="w-full rounded-lg border border-[var(--border)] px-3 py-2 text-xs text-[var(--text-muted)] transition hover:border-[var(--gold)]/40 hover:text-[var(--gold-bright)]"
-              >
-                Log out
-              </button>
-            </form>
           </div>
         </div>
 
@@ -126,33 +123,9 @@ export async function DashboardShell({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3 lg:hidden">
-          <div className="min-w-0">
-            <p className="font-display text-[var(--gold-bright)]">{restaurantName}</p>
-            <div className="mt-0.5 flex items-center gap-2">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--gold)]/20 text-[10px] font-bold leading-none text-[var(--gold-bright)]">
-                {userName.slice(0, 1).toUpperCase()}
-              </span>
-              <p className="truncate text-[10px] leading-none text-[var(--text-dim)]">
-                {userName} · {roleLabel}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <TableRequestsPanel />
-            <ThemeToggle />
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/login" });
-              }}
-            >
-              <button type="submit" className="text-xs text-[var(--text-muted)]">
-                Log out
-              </button>
-            </form>
-          </div>
-        </div>
+        <header className="sticky top-0 z-40 flex items-center justify-end gap-3 border-b border-[var(--border)] bg-[var(--bg-elevated)]/95 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-[var(--bg-elevated)]/80">
+          {navbarControls}
+        </header>
 
         <nav className="flex gap-1 overflow-x-auto border-b border-[var(--border)] px-3 py-2 lg:hidden">
           {nav.map((item) => (
