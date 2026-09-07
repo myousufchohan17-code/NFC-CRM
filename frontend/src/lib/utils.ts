@@ -4,6 +4,7 @@ export const ORDER_STATUSES = [
   "PREPARING",
   "READY",
   "COMPLETED",
+  "REPORTED",
 ] as const;
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
@@ -14,13 +15,23 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
   PREPARING: "Preparing",
   READY: "Ready",
   COMPLETED: "Completed",
+  REPORTED: "Reported",
 };
 
-/** Next allowed status in the flow, or null if already completed */
+/** Orders that count toward report revenue (saved out of kitchen Completed). */
+export function isReportedOrder(status: string): boolean {
+  return status === "COMPLETED" || status === "REPORTED";
+}
+
+/** Next allowed status in the kitchen flow, or null if already completed/reported */
 export function nextStatus(current: string): OrderStatus | null {
+  if (current === "COMPLETED" || current === "REPORTED") return null;
   const index = ORDER_STATUSES.indexOf(current as OrderStatus);
   if (index < 0 || index >= ORDER_STATUSES.length - 1) return null;
-  return ORDER_STATUSES[index + 1];
+  const next = ORDER_STATUSES[index + 1];
+  // Kitchen advance never jumps into REPORTED — that is the Save action.
+  if (next === "REPORTED") return null;
+  return next;
 }
 
 export function formatMoney(amount: number): string {

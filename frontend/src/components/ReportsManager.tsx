@@ -37,6 +37,7 @@ const STATUS_COLOR: Record<string, string> = {
   PREPARING: "#eab308",
   READY: "#22c55e",
   COMPLETED: "#3b82f6",
+  REPORTED: "#6366f1",
 };
 
 function toInput(date: Date) {

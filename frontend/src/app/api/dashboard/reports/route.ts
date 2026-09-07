@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireStaff } from "@/lib/session";
-import { ORDER_STATUSES, STATUS_LABELS } from "@/lib/utils";
+import { ORDER_STATUSES, STATUS_LABELS, isReportedOrder } from "@/lib/utils";
 
 function dayKey(d: Date) {
   const y = d.getFullYear();
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
     orderBy: { createdAt: "desc" },
   });
 
-  const completed = orders.filter((o) => o.status === "COMPLETED");
+  const completed = orders.filter((o) => isReportedOrder(o.status));
   const revenue = completed.reduce((sum, o) => sum + o.total, 0);
 
   const ordersByStatus = ORDER_STATUSES.map((s) => {
@@ -60,7 +60,7 @@ export async function GET(request: Request) {
     const key = dayKey(new Date(o.createdAt));
     const b = bucket.get(key) ?? { orders: 0, revenue: 0 };
     b.orders += 1;
-    if (o.status === "COMPLETED") b.revenue += o.total;
+    if (isReportedOrder(o.status)) b.revenue += o.total;
     bucket.set(key, b);
   }
   const cursor = new Date(from.getTime());
@@ -73,7 +73,7 @@ export async function GET(request: Request) {
   const itemMap = new Map<string, { quantity: number; revenue: number }>();
   const categoryMap = new Map<string, { quantity: number; revenue: number }>();
   for (const o of orders) {
-    if (o.status !== "COMPLETED") continue;
+    if (!isReportedOrder(o.status)) continue;
     for (const item of o.items) {
       const itemKey = item.itemName || "Unknown item";
       const it = itemMap.get(itemKey) ?? { quantity: 0, revenue: 0 };

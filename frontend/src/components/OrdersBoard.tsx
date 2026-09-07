@@ -54,14 +54,14 @@ const COLUMNS: { key: OrderStatus[]; title: string; color: string; btn: string; 
     btn: "Mark as Served",
     btnClass: "bg-[#22c55e] hover:bg-[#4ade80] text-black",
   },
-  {
-    key: ["COMPLETED"],
-    title: "Completed",
-    color: "text-[#3b82f6]",
-    btn: "View Details",
-    btnClass: "border border-[#3b82f6] text-[#3b82f6] hover:bg-[#3b82f6]/10",
-  },
-];
+    {
+      key: ["COMPLETED"],
+      title: "Completed",
+      color: "text-[#3b82f6]",
+      btn: "Save",
+      btnClass: "bg-[#3b82f6] hover:bg-[#60a5fa] text-white",
+    },
+  ];
 
 export function OrdersBoard() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -239,7 +239,7 @@ export function OrdersBoard() {
   }, [orders]);
 
   async function advanceStatus(orderId: string, status: string) {
-    if (status === "COMPLETED") return;
+    if (status === "COMPLETED" || status === "REPORTED") return;
     setUpdatingId(orderId);
     try {
       // From NEW: Accept -> ACCEPTED, then next click PREPARING feels slow.
@@ -262,6 +262,29 @@ export function OrdersBoard() {
       if (res.ok) {
         const data = await res.json();
         setOrders((prev) => prev.map((o) => (o.id === orderId ? data.order : o)));
+      }
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  /** Move a completed order into Reports (REPORTED) and remove it from Kitchen Completed. */
+  async function saveOrderToReports(order: Order) {
+    if (order.status !== "COMPLETED") return;
+    setUpdatingId(order.id);
+    try {
+      const res = await fetch("/api/dashboard/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.id, status: "REPORTED" }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setOrders((prev) =>
+          prev.map((o) => (o.id === order.id ? (data.order as Order) : o))
+        );
+        setDeleteNotice(`Order ${order.orderNumber} saved to Reports.`);
+        setTimeout(() => setDeleteNotice(null), 2200);
       }
     } finally {
       setUpdatingId(null);
@@ -921,7 +944,8 @@ export function OrdersBoard() {
                             </span>
                           </div>
                           {(nxt || order.status === "READY" || order.status === "NEW" || order.status === "ACCEPTED") &&
-                            order.status !== "COMPLETED" && (
+                            order.status !== "COMPLETED" &&
+                            order.status !== "REPORTED" && (
                               <button
                                 type="button"
                                 disabled={updatingId === order.id || deletingId === order.id}
@@ -934,9 +958,11 @@ export function OrdersBoard() {
                           {order.status === "COMPLETED" && (
                             <button
                               type="button"
-                              className={`mt-3 w-full rounded-lg py-2 text-xs font-bold uppercase tracking-wide transition ${col.btnClass}`}
+                              disabled={updatingId === order.id || deletingId === order.id}
+                              onClick={() => saveOrderToReports(order)}
+                              className="mt-3 w-full rounded-lg bg-[#3b82f6] py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-[#60a5fa] disabled:opacity-50"
                             >
-                              View Details
+                              {updatingId === order.id ? "Saving…" : "Save"}
                             </button>
                           )}
                           {(order.status === "NEW" ||
@@ -952,23 +978,27 @@ export function OrdersBoard() {
                               Print Receipt
                             </button>
                           )}
-                          <button
-                            type="button"
-                            disabled={deletingId === order.id || updatingId === order.id}
-                            onClick={() => openEditOrder(order)}
-                            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--gold)]/50 bg-[var(--gold)]/10 py-2 text-[10px] font-bold uppercase tracking-wide text-[var(--gold-bright)] transition hover:bg-[var(--gold)]/20 disabled:opacity-50"
-                          >
-                            <Pencil className="h-3 w-3" />
-                            Edit Order (POS)
-                          </button>
-                          <button
-                            type="button"
-                            disabled={deletingId === order.id || updatingId === order.id}
-                            onClick={() => setOrderToDelete(order)}
-                            className="mt-2 w-full rounded-lg border border-red-500/50 bg-red-500/10 py-2 text-[10px] font-bold uppercase tracking-wide text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
-                          >
-                            {deletingId === order.id ? "Deleting…" : "Delete Order"}
-                          </button>
+                          {order.status !== "COMPLETED" && order.status !== "REPORTED" && (
+                            <>
+                              <button
+                                type="button"
+                                disabled={deletingId === order.id || updatingId === order.id}
+                                onClick={() => openEditOrder(order)}
+                                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--gold)]/50 bg-[var(--gold)]/10 py-2 text-[10px] font-bold uppercase tracking-wide text-[var(--gold-bright)] transition hover:bg-[var(--gold)]/20 disabled:opacity-50"
+                              >
+                                <Pencil className="h-3 w-3" />
+                                Edit Order (POS)
+                              </button>
+                              <button
+                                type="button"
+                                disabled={deletingId === order.id || updatingId === order.id}
+                                onClick={() => setOrderToDelete(order)}
+                                className="mt-2 w-full rounded-lg border border-red-500/50 bg-red-500/10 py-2 text-[10px] font-bold uppercase tracking-wide text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
+                              >
+                                {deletingId === order.id ? "Deleting…" : "Delete Order"}
+                              </button>
+                            </>
+                          )}
                         </article>
                       );
                     })}
