@@ -10,6 +10,7 @@ import {
   Package,
   CreditCard,
   Settings,
+  Footprints,
 } from "lucide-react";
 import { auth, signOut } from "@/lib/auth";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -19,6 +20,13 @@ const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, key: "orders", badgeKey: null },
   { href: "/dashboard/tables", label: "Tables", icon: Table2, key: "tables", badgeKey: null },
   { href: "/dashboard/menu", label: "Menu", icon: UtensilsCrossed, key: "menu", badgeKey: null },
+  {
+    href: "/dashboard/walking-customer",
+    label: "Walking Customer",
+    icon: Footprints,
+    key: "walking-customer",
+    badgeKey: null,
+  },
   { href: "/dashboard/categories", label: "Categories", icon: Tags, key: "categories", badgeKey: null },
   { href: "/dashboard/customers", label: "Customers", icon: Users, key: "customers", badgeKey: null },
   { href: "/dashboard/staff", label: "Staff", icon: UserCog, key: "staff", badgeKey: null },
